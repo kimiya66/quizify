@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Project Viewer</title>
+    <style>
+		
+		button {
+		    background-color: #007BFF; /* Bootstrap blue */
+		    color: white; /* Text color */
+		    border: none; /* Remove default border */
+		    padding: 10px 15px; /* Vertical and horizontal padding */
+		    border-radius: 5px; /* Rounded corners */
+		    cursor: pointer; /* Pointer cursor on hover */
+		    font-size: 16px; /* Font size */
+		    margin: 5px 0; /* Margin between buttons */
+		    transition: background-color 0.3s, box-shadow 0.3s; /* Smooth transition */
+		}
+
+		button:hover {
+		    background-color: #0056b3; /* Darker blue on hover */
+		    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow effect on hover */
+		}
+		
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+		
+		.project-input-container {
+		    
+		    margin-bottom: 15px; /* Space below the container */
+		}
+		
+		.file-input-container {
+		    margin-top: 10px; /* Space above the file input */
+		}
+
+		#project-name-input {
+		    flex: 1; /* Take up available space */
+		    padding: 10px; /* Padding inside the input */
+		    border: 1px solid #ccc; /* Light gray border */
+		    border-radius: 5px; /* Rounded corners */
+		    font-size: 16px; /* Font size */
+		    margin-right: 10px; /* Space between input and button */
+		    transition: border-color 0.3s; /* Smooth border transition */
+		}
+
+		#project-name-input:focus {
+		    border-color: #007BFF; /* Change border color on focus */
+		    outline: none; /* Remove default outline */
+		}
+        .sidebar {
+            width: 250px;
+            background: #333;
+            color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+        .sidebar h2 {
+            margin-top: 0;
+        }
+        .project {
+            padding: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .project:hover {
+            background: #575757;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+            background: white;
+            overflow-y: auto;
+        }
+        .content h2 {
+            margin-top: 0;
+        }
+		
+
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Projects</h2>
+    <div id="project-list"></div>
+	<div class="project-input-container">
+	    <input type="text" id="project-name-input" placeholder="Project Name" />
+	    <button onclick="createProject()">Create a new Project</button>
+	</div>
+</div>
+
+<div class="content">
+    <h2>Project Files</h2>
+    <div id="file-viewer">Select a project to view files.</div>
+</div>
+
+<script>
+    const projects = {};
+
+	function createProject() {
+	    const projectName = document.getElementById('project-name-input').value;
+	    if (!projectName) {
+	        alert("Please enter a project name.");
+	        return;
+	    }
+
+	    // Create a new project with an empty array for files
+	    projects[projectName] = [];
+
+	    // Create a new project link in the sidebar
+	    const projectDiv = document.createElement('div');
+	    projectDiv.className = 'project';
+	    projectDiv.textContent = projectName;
+		
+	    // Create a section for file input and button
+	    const fileInputContainer = document.createElement('div');
+	    fileInputContainer.className = 'file-input-container';
+
+	    const fileInput = document.createElement('input');
+	    fileInput.type = 'file';
+	    fileInput.accept = '.txt,.PNG';
+	    
+	    const addButton = document.createElement('button');
+	    addButton.textContent = 'Add File to Selected Project';
+	    addButton.onclick = function() {
+	        addFileToProject(projectName, fileInput);
+	    };
+
+	    // Append the input and button to the container
+	    fileInputContainer.appendChild(fileInput);
+	    fileInputContainer.appendChild(addButton);
+
+	    // Set the onclick for the projectDiv
+	    projectDiv.onclick = function() {
+	        const previousSelected = document.querySelector('.project.selected');
+	        if (previousSelected) {
+	            previousSelected.classList.remove('selected');
+	        }
+	        projectDiv.classList.add('selected');
+	        viewProject(projectName);
+	    };
+
+	    // Append the new project link and file input container to the project list
+	    document.getElementById('project-list').appendChild(projectDiv);
+	    document.getElementById('project-list').appendChild(fileInputContainer);
+	    
+	    // Clear the input field
+	    document.getElementById('project-name-input').value = '';
+	}
+
+	function addFileToProject(projectName, fileInput) {
+	    const file = fileInput.files[0];
+
+	    if (file) {
+	        const reader = new FileReader();
+	        reader.onload = function(e) {
+	            const fileName = file.name;
+	            const blob = new Blob([e.target.result], { type: 'text/plain' });
+	            const url = URL.createObjectURL(blob);
+	            
+	            projects[projectName].push({ name: fileName, url: url });
+	            
+	            // Clear the file input
+	            fileInput.value = '';
+	            viewProject(projectName); // Refresh the view to show the newly added file
+	        };
+	        reader.readAsText(file);
+	    }
+	}
+
+    function viewProject(projectName) {
+        const fileViewer = document.getElementById('file-viewer');
+        fileViewer.innerHTML = `<h3>${projectName}</h3>`;
+        
+        const projectFiles = projects[projectName];
+        if (projectFiles.length === 0) {
+            fileViewer.innerHTML += `<p>No files uploaded for this project.</p>`;
+            return;
+        }
+        
+        projectFiles.forEach(file => {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'project';
+            fileDiv.textContent = file.name;
+            fileDiv.onclick = function() {
+                fetch(file.url)
+                    .then(response => response.text())
+                    .then(data => {
+                        fileViewer.innerHTML = `<h3>${file.name}</h3><pre>${data}</pre>`;
+                    });
+            };
+            fileViewer.appendChild(fileDiv);
+        });
+    }
+</script>
+
+</body>
+</html>

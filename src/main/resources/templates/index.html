@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Questions and Answers</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Questions</h1>
+        <div id="questions-list"></div>
+    </div>
+	<style>
+	
+	body {
+	    font-family: Arial, sans-serif;
+	    background-color: rgb(190, 223, 32);
+	}
+
+	.container {
+	    max-width: 600px;
+	    margin: auto;
+	    padding: 20px;
+	    background: white;
+	    border-radius: 5px;
+	    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+	}
+
+	h1 {
+	    text-align: center;
+	}
+
+	.question {
+	    padding: 10px;
+	    background: #007BFF;
+	    color: white;
+	    margin: 10px 0;
+	    cursor: pointer;
+	    border-radius: 5px;
+	}
+
+	.answer {
+	    padding: 10px;
+	    background: #f8f9fa;
+	    margin: 5px 0 15px 10px;
+	    border-left: 5px solid #007BFF;
+	}
+	
+	</style>
+
+    <script>
+		
+        async function fetchQuestions() {
+            const response = await fetch('/question');
+            const questions = await response.json();
+            const questionsList = document.getElementById('questions-list');
+			
+		
+            questions.forEach(q => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                questionDiv.innerText = q.question;
+
+                const answerDiv = document.createElement('div');
+                answerDiv.className = 'answer';
+                answerDiv.innerText = q.answer;
+                answerDiv.style.display = 'none'; // Initially hidden
+
+                questionDiv.onclick = () => {
+                    answerDiv.style.display = answerDiv.style.display === 'none' ? 'block' : 'none';
+                };
+
+                questionsList.appendChild(questionDiv);
+                questionsList.appendChild(answerDiv);
+            });
+        }
+
+        // Fetch questions when the page loads
+        window.onload = fetchQuestions;
+    </script>
+</body>
+</html>
